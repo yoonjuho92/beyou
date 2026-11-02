@@ -16,6 +16,7 @@ export const PALETTE = {
   D: '#7cc4f5', // 눈물
   G: '#9aa5b1', // 생각 중 점
   O: '#f28c28', // 간식 당근
+  R: '#d0681a', // 당근 줄무늬 (진한 주황)
   L: '#6cbf4a', // 당근 잎
 } as const satisfies Record<string, string | null>;
 
