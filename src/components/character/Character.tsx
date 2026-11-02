@@ -18,7 +18,7 @@ const FACE_CENTER = 8.5 / 24;
  *
  * 부모 요소가 돌아다닐 영역이 된다 (relative + 크기 지정).
  */
-export function Character({ scale = 5, bubble }: { scale?: number; bubble?: ReactNode }) {
+export function Character({ scale = 5, bubble, onPoke }: { scale?: number; bubble?: ReactNode; onPoke?: () => void }) {
   const state = useCharacterStore((s) => s.state);
   const stayPut = useCharacterStore((s) => s.stayPut);
   const reduceMotion = useReducedMotion();
@@ -114,7 +114,18 @@ export function Character({ scale = 5, bubble }: { scale?: number; bubble?: Reac
             </motion.div>
           )}
           <motion.div style={{ scale: depth, rotate: tilt }} className="origin-bottom">
-            <PixelLlama state={state} scale={scale} />
+            {/* 클릭(탭)하면 콕 찔린 듯 살짝 눌렸다가 반응한다 */}
+            <motion.button
+              type="button"
+              onClick={onPoke}
+              disabled={!onPoke}
+              aria-label="비유 콕 찌르기"
+              className="block cursor-pointer"
+              whileTap={reduceMotion ? undefined : { scale: 0.9, y: 4 }}
+              transition={{ type: 'spring', stiffness: 600, damping: 15 }}
+            >
+              <PixelLlama state={state} scale={scale} />
+            </motion.button>
           </motion.div>
         </motion.div>
         {/* 풀밭 위 그림자: 높이 뜰수록 작고 옅게 */}

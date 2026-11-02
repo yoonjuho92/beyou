@@ -10,6 +10,7 @@ import { useDaylight } from '@/components/character/useDaylight';
 import { SpeechBubble } from '@/components/character/SpeechBubble';
 import { parseEmotion, stripEmotionTag } from '@/lib/emotion';
 import { cleanHint, looksLikeCharacterLine } from '@/lib/hintText';
+import { pokeReaction } from '@/lib/chat/poke';
 import { TREAT_IDS, type TreatId } from '@/lib/chat/treat';
 import { useCharacterStore } from '@/stores/characterStore';
 import type { ChatUIMessage } from '@/types';
@@ -243,6 +244,21 @@ export function ChatContainer({
     clearError();
   }, [clearError]);
 
+  // 캐릭터를 클릭(탭)하면 짧은 츤데레 반응. LLM·DB 없이 화면에만 띄운다. 대답 중일 땐 무시.
+  const pokeTimesRef = useRef<number[]>([]);
+  const lastPokeLineRef = useRef<string | null>(null);
+  const onPoke = useCallback(() => {
+    if (busy || proactivePending) return;
+    const now = Date.now();
+    pokeTimesRef.current = [...pokeTimesRef.current.filter((t) => now - t < 10_000), now];
+    const { text, emotion } = pokeReaction(pokeTimesRef.current, lastPokeLineRef.current);
+    lastPokeLineRef.current = text;
+    lastActivityRef.current = now;
+    clearError();
+    setSpoken({ text, at: messagesLengthRef.current });
+    showEmotion(emotion, 2_500);
+  }, [busy, proactivePending, clearError, showEmotion]);
+
   // 전송 → thinking(간식이면 eating_*), 첫 토큰 → talking. 완료 후 감정 표정은 onFinish에서.
   useEffect(() => {
     const waiting = treating ? (`eating_${treating}` as const) : 'thinking';
@@ -279,6 +295,7 @@ export function ChatContainer({
       <div className="absolute inset-x-3 top-[22%] bottom-[calc(env(safe-area-inset-bottom)+166px)]">
         <Character
           scale={5}
+          onPoke={onPoke}
           bubble={
             showBubble ? (
               <SpeechBubble
