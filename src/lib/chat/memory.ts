@@ -34,3 +34,25 @@ export async function saveTurnMemory(input: SaveMemoryInput): Promise<void> {
   });
   if (error) throw error;
 }
+
+/** 이 유저의 과거 대화(memories) 중 하나를 무작위로 고른다. */
+export async function randomMemory(supabase: SupabaseClient<Database>, userId: string, characterId: string) {
+  const { count, error } = await supabase
+    .from('memories')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('character_id', characterId);
+  if (error) throw error;
+  if (!count) return null;
+
+  const offset = Math.floor(Math.random() * count);
+  const { data, error: rowError } = await supabase
+    .from('memories')
+    .select('content, created_at')
+    .eq('user_id', userId)
+    .eq('character_id', characterId)
+    .range(offset, offset)
+    .maybeSingle();
+  if (rowError) throw rowError;
+  return data;
+}

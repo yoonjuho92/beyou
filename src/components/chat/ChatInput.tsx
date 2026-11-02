@@ -4,13 +4,15 @@ import { useState, type FormEvent, type KeyboardEvent } from 'react';
 
 type Props = {
   onSend: (text: string) => void;
+  /** 입력 내용이 바뀔 때마다 (말 걸기 타이머가 입력 중인지 알 수 있게) */
+  onDraftChange?: (value: string) => void;
   disabled?: boolean;
   maxLength: number;
   placeholder: string;
 };
 
 /** 뭉게구름 모양 입력창. 위쪽 몽실몽실한 혹은 장식용 원이다. */
-export function ChatInput({ onSend, disabled = false, maxLength, placeholder }: Props) {
+export function ChatInput({ onSend, onDraftChange, disabled = false, maxLength, placeholder }: Props) {
   const [value, setValue] = useState('');
   const trimmed = value.trim();
 
@@ -19,6 +21,7 @@ export function ChatInput({ onSend, disabled = false, maxLength, placeholder }: 
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setValue('');
+    onDraftChange?.('');
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -44,7 +47,10 @@ export function ChatInput({ onSend, disabled = false, maxLength, placeholder }: 
         <textarea
           id="chat-input"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            onDraftChange?.(e.target.value);
+          }}
           onKeyDown={onKeyDown}
           maxLength={maxLength}
           rows={1}

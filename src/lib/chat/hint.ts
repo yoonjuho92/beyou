@@ -5,6 +5,7 @@ import { serverEnv } from '@/lib/env.server';
 import { HINT_MAX_CHARS } from '@/lib/hintText';
 import { chatModel } from '@/lib/openai';
 import type { Database } from '@/types/database';
+import { randomMemory } from './memory';
 import { loadUserKnowledge } from './userKnowledge';
 
 /** 과거 대화가 있어도 가끔은 설정만으로 만들어 문구가 한쪽으로 쏠리지 않게 한다. */
@@ -13,28 +14,6 @@ const MEMORY_RATIO = 0.5;
 type Client = SupabaseClient<Database>;
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeZone: 'Asia/Seoul' });
-
-/** 이 유저의 과거 대화(memories) 중 하나를 무작위로 고른다. */
-async function randomMemory(supabase: Client, userId: string, characterId: string) {
-  const { count, error } = await supabase
-    .from('memories')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('character_id', characterId);
-  if (error) throw error;
-  if (!count) return null;
-
-  const offset = Math.floor(Math.random() * count);
-  const { data, error: rowError } = await supabase
-    .from('memories')
-    .select('content, created_at')
-    .eq('user_id', userId)
-    .eq('character_id', characterId)
-    .range(offset, offset)
-    .maybeSingle();
-  if (rowError) throw rowError;
-  return data;
-}
 
 function hintPrompt(characterName: string, systemPrompt: string) {
   return [
