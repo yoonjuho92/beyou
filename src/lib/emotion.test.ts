@@ -9,6 +9,10 @@ describe('emotion tag', () => {
     });
   });
 
+  it('recognizes the tsundere emotion', () => {
+    expect(parseEmotion('흥, 별로 안 좋아요.\n[emotion:tsundere]').emotion).toBe('tsundere');
+  });
+
   it('falls back to neutral for missing or unknown tags', () => {
     expect(parseEmotion('그렇군요.').emotion).toBe('neutral');
     expect(parseEmotion('음.\n[emotion:angry]')).toEqual({ content: '음.', emotion: 'neutral' });

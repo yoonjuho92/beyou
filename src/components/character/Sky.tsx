@@ -101,6 +101,9 @@ export function Sky({ daylight }: { daylight: Daylight }) {
   const { darkness, glow } = daylight;
   // 노을빛은 아직 어두워지기 전에 가장 잘 보이고, 밤 하늘에 덮이며 사라진다.
   const duskOpacity = glow * (1 - darkness * 0.6);
+  // 해와 달이 같이 보이지 않게: 해는 어둠 60% 전에 다 지고, 달은 어둠 40%부터 떠오른다 (자리도 왼쪽/오른쪽으로 나눔).
+  const sunOpacity = 1 - Math.min(1, darkness / 0.6);
+  const moonOpacity = Math.max(0, (darkness - 0.4) / 0.6);
   return (
     <div
       aria-hidden
@@ -128,7 +131,7 @@ export function Sky({ daylight }: { daylight: Daylight }) {
       <div
         className="absolute top-[7%] left-[8%]"
         style={{
-          opacity: 1 - darkness,
+          opacity: sunOpacity,
           transform: `translateY(${darkness * 26}vh)`,
           filter: `drop-shadow(0 0 24px rgba(${glow > 0 ? '255,160,90' : '255,216,94'},0.8))`,
           transition: FADE,
@@ -137,12 +140,12 @@ export function Sky({ daylight }: { daylight: Daylight }) {
         <PixelArt grid={SUN} px={6} />
       </div>
 
-      {/* 달: 밤에 떠오른다 */}
+      {/* 달: 해가 진 뒤 하늘 반대편(오른쪽)에서 떠오른다. 오른쪽 위 버튼들과 겹치지 않게 62% 지점 */}
       <div
-        className="absolute top-[8%] left-[10%]"
+        className="absolute top-[9%] left-[62%]"
         style={{
-          opacity: darkness,
-          transform: `translateY(${(1 - darkness) * 12}vh)`,
+          opacity: moonOpacity,
+          transform: `translateY(${(1 - moonOpacity) * 10}vh)`,
           filter: 'drop-shadow(0 0 18px rgba(255,244,194,0.55))',
           transition: FADE,
         }}

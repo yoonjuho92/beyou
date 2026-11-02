@@ -31,6 +31,6 @@ export function treatInstruction(id: TreatId): string {
     `- 맛: ${taste}.`,
     '- 처음 먹어 보는 맛에 대한 감상이나 몽실계 음식(솜사탕 풀 등)과의 비교를 짧게 곁들여도 좋습니다.',
     '- 좋아하는 티가 살짝 새어 나오게 합니다 (예: "뭐, 나쁘지 않네요. …하나 더 있어요?").',
-    '- 감정 태그는 [emotion:happy]를 씁니다.',
+    '- 감정 태그는 [emotion:tsundere]를 씁니다.',
   ].join('\n');
 }

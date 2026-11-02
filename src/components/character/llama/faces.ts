@@ -49,6 +49,26 @@ export const FACES = {
     { x: 6, y: 9, rows: ['_BBB_', 'B___B'] },
   ],
 
+  // 츤데레: 반쯤 감은 눈으로 옆(오른쪽)을 흘겨보고, 볼은 넓게 붉히고, 입은 한쪽으로 삐죽
+  tsundere: [
+    ...eyes(['BB', '_K']),
+    nose,
+    { x: 2, y: 8, rows: ['PPP'] },
+    { x: 12, y: 8, rows: ['PPP'] },
+    { x: 8, y: 9, rows: ['BBB', '___'] },
+    { x: 7, y: 10, rows: ['B'] },
+  ],
+
+  // 츤데레가 슬쩍 정면을 볼 때: 눈은 그대로 반쯤 감고 눈동자만 가운데로
+  tsundere_peek: [
+    ...eyes(['BB', 'KK']),
+    nose,
+    { x: 2, y: 8, rows: ['PPP'] },
+    { x: 12, y: 8, rows: ['PPP'] },
+    { x: 8, y: 9, rows: ['BBB', '___'] },
+    { x: 7, y: 10, rows: ['B'] },
+  ],
+
   // 3×3 동그란 눈 + O 입
   surprised: [
     ...eyes(['KKK', 'KHK', 'KKK'], 3, 11, 5),

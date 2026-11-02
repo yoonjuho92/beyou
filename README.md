@@ -126,7 +126,7 @@ LLM에 보내는 히스토리의 유저 메시지 앞에 보낸 시각(`[11월 2
 ### `POST /api/chat`
 `useChat` 규격 `{ conversationId?, characterSlug, messages }`. 세션 필수(401), 분당 `CHAT_RATE_LIMIT_PER_MIN`회(429),
 `CHAT_MAX_INPUT_CHARS`자 제한(413). 새 대화면 메시지 메타데이터(`conversationId`)로 id를 돌려줍니다.
-감정(`happy|sad|surprised|neutral`)은 finish 메타데이터로 전달되고, `[emotion:*]` 태그는 화면과 DB에서 제거됩니다.
+감정(`happy|sad|surprised|neutral|tsundere`)은 finish 메타데이터로 전달되고, `[emotion:*]` 태그는 화면과 DB에서 제거됩니다.
 
 레이트리밋은 기본적으로 프로세스 메모리(Map)를 쓰며, `UPSTASH_REDIS_REST_URL`/`TOKEN`이 있으면 Upstash를 사용합니다.
 

@@ -16,6 +16,7 @@ const EMOTION_TO_STATE: Record<Emotion, LlamaState> = {
   happy: 'happy',
   sad: 'sad',
   surprised: 'surprised',
+  tsundere: 'tsundere',
   neutral: 'idle',
 };
 

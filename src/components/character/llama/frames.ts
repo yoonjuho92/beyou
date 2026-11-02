@@ -2,7 +2,16 @@ import { BASE } from './base';
 import { compose, type Patch } from './compose';
 import { EATING, FACES, TEARS_FALLEN, THINKING_DOTS, TREAT_PIECES } from './faces';
 
-export type LlamaState = 'idle' | 'thinking' | 'talking' | 'happy' | 'sad' | 'surprised' | 'eating_carrot' | 'eating_dandelion';
+export type LlamaState =
+  | 'idle'
+  | 'thinking'
+  | 'talking'
+  | 'happy'
+  | 'sad'
+  | 'surprised'
+  | 'tsundere'
+  | 'eating_carrot'
+  | 'eating_dandelion';
 
 export const LLAMA_STATES: readonly LlamaState[] = [
   'idle',
@@ -11,6 +20,7 @@ export const LLAMA_STATES: readonly LlamaState[] = [
   'happy',
   'sad',
   'surprised',
+  'tsundere',
   'eating_carrot',
   'eating_dandelion',
 ];
@@ -65,6 +75,13 @@ const SEQUENCES: Record<LlamaState, readonly FrameSpec[]> = {
     { patches: [...FACES.sad, ...TEARS_FALLEN], ticks: 6 },
   ],
   surprised: [{ patches: FACES.surprised, ticks: 1 }],
+  // 고개 돌린 채 흘겨보다가, 가끔 슬쩍 정면을 봤다가 다시 외면한다
+  tsundere: [
+    { patches: FACES.tsundere, ticks: 22 },
+    { patches: FACES.tsundere_peek, ticks: 5 },
+    { patches: FACES.tsundere, ticks: 14 },
+    { patches: FACES.blink, ticks: 2 },
+  ],
   eating_carrot: eating(TREAT_PIECES.carrot),
   eating_dandelion: eating(TREAT_PIECES.dandelion),
 };
