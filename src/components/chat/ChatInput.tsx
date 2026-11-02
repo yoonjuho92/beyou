@@ -9,17 +9,20 @@ type Props = {
   disabled?: boolean;
   maxLength: number;
   placeholder: string;
+  /** 다 만들어진 추천 문구. 입력창이 비어 있을 때 보내기(Enter)를 누르면 이 문구를 그대로 보낸다. */
+  suggestion?: string | null;
 };
 
 /** 뭉게구름 모양 입력창. 위쪽 몽실몽실한 혹은 장식용 원이다. */
-export function ChatInput({ onSend, onDraftChange, disabled = false, maxLength, placeholder }: Props) {
+export function ChatInput({ onSend, onDraftChange, disabled = false, maxLength, placeholder, suggestion }: Props) {
   const [value, setValue] = useState('');
   const trimmed = value.trim();
+  const toSend = trimmed || suggestion?.trim() || '';
 
   function submit(event?: FormEvent) {
     event?.preventDefault();
-    if (!trimmed || disabled) return;
-    onSend(trimmed);
+    if (!toSend || disabled) return;
+    onSend(toSend);
     setValue('');
     onDraftChange?.('');
   }
@@ -61,7 +64,7 @@ export function ChatInput({ onSend, onDraftChange, disabled = false, maxLength, 
         />
         <button
           type="submit"
-          disabled={disabled || !trimmed}
+          disabled={disabled || !toSend}
           className="h-10 shrink-0 rounded-full bg-[#8cc8ef] px-4 text-sm font-semibold text-white transition hover:bg-[#74b9e6] disabled:opacity-40"
         >
           보내기

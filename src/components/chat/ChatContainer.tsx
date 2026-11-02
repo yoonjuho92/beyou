@@ -66,6 +66,8 @@ export function ChatContainer({
   useVisualViewport();
   const conversationIdRef = useRef<string | null>(initialConversationId);
   const [hint, setHint] = useState<string | null>(null);
+  /** 추천 문구가 끝까지 만들어졌는지. 스트리밍 중인 반쪽 문장은 바로 보내기 대상이 아니다. */
+  const [hintReady, setHintReady] = useState(false);
   /**
    * 비유가 먼저 한 말(인사·말 걸기). at = 그때의 messages.length.
    * 그 뒤로 채팅이 오가지 않았으면(at === messages.length) 이 말을 말풍선에 띄운다.
@@ -83,6 +85,7 @@ export function ChatContainer({
 
   // 입력창 대화 유도 문구. 스트림으로 받아 오는 대로 채운다. 실패하면 기존 문구를 그대로 둔다.
   const refreshHint = useCallback(async () => {
+    setHintReady(false);
     try {
       const res = await fetch(`/api/hint?characterSlug=${encodeURIComponent(characterSlug)}`);
       if (!res.ok || !res.body) return;
@@ -95,6 +98,7 @@ export function ChatContainer({
         const text = cleanHint(raw);
         if (text) setHint(text);
       }
+      if (cleanHint(raw)) setHintReady(true);
     } catch (err) {
       console.warn('[hint]', err);
     }
@@ -290,6 +294,7 @@ export function ChatContainer({
             disabled={busy}
             maxLength={maxInputChars}
             placeholder={hint ?? `${characterName}에게 말을 걸어 보세요`}
+            suggestion={hintReady ? hint : null}
             onDraftChange={(value) => {
               draftRef.current = value;
               lastActivityRef.current = Date.now();
