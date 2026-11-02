@@ -261,7 +261,7 @@ export function ChatContainer({
       <Meadow className="absolute inset-x-0 top-[42%] bottom-0" />
 
       {/* 비유가 날아다니는 영역: 지평선 위 하늘 ~ 구름 입력창 위 */}
-      <div className="absolute inset-x-3 top-[22%] bottom-[calc(env(safe-area-inset-bottom)+150px)]">
+      <div className="absolute inset-x-3 top-[22%] bottom-[calc(env(safe-area-inset-bottom)+166px)]">
         <Character
           scale={5}
           bubble={
