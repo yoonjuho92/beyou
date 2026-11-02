@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Character } from '@/components/character/Character';
 import { Meadow } from '@/components/character/Meadow';
 import { Sky } from '@/components/character/Sky';
+import { useDaylight } from '@/components/character/useDaylight';
 import { SpeechBubble } from '@/components/character/SpeechBubble';
 import { parseEmotion, stripEmotionTag } from '@/lib/emotion';
 import { cleanHint, looksLikeCharacterLine } from '@/lib/hintText';
@@ -66,6 +67,7 @@ export function ChatContainer({
   returning,
 }: Props) {
   useVisualViewport();
+  const daylight = useDaylight();
   const conversationIdRef = useRef<string | null>(initialConversationId);
   const [hint, setHint] = useState<string | null>(null);
   /** 추천 문구가 끝까지 만들어졌는지. 스트리밍 중인 반쪽 문장은 바로 보내기 대상이 아니다. */
@@ -263,10 +265,15 @@ export function ChatContainer({
 
   return (
     <>
-      <Sky />
+      <Sky daylight={daylight} />
 
-      {/* 하늘 아래를 가로로 꽉 채우는 풀밭 */}
+      {/* 하늘 아래를 가로로 꽉 채우는 풀밭. 저녁이 되면 푸르스름한 그늘이 덮인다 */}
       <Meadow className="absolute inset-x-0 top-[42%] bottom-0" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[42%] bottom-0 bg-[#0b1236]"
+        style={{ opacity: daylight.darkness * 0.5 + daylight.glow * 0.08, transition: 'opacity 2s linear' }}
+      />
 
       {/* 비유가 날아다니는 영역: 지평선 위 하늘 ~ 구름 입력창 위 */}
       <div className="absolute inset-x-3 top-[22%] bottom-[calc(env(safe-area-inset-bottom)+166px)]">

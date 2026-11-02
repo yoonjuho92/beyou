@@ -54,8 +54,24 @@ button {
   animation-iteration-count: infinite;
 }
 
+/* 밤하늘 별 반짝임 */
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.star-twinkle {
+  animation: star-twinkle 3s steps(3, end) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sky-drift {
+  .sky-drift,
+  .star-twinkle {
     animation-play-state: paused;
   }
 }
