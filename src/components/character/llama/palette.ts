@@ -17,7 +17,8 @@ export const PALETTE = {
   G: '#9aa5b1', // 생각 중 점
   O: '#f28c28', // 간식 당근
   R: '#d0681a', // 당근 줄무늬 (진한 주황)
-  L: '#6cbf4a', // 당근 잎
+  L: '#6cbf4a', // 당근 잎 / 민들레 잎
+  V: '#3f8a2e', // 민들레 잎맥 (진한 초록)
 } as const satisfies Record<string, string | null>;
 
 export type PixelChar = keyof typeof PALETTE;

@@ -19,6 +19,16 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 전체화면 중에는 로그아웃 버튼을 숨기고, 그 아래 버튼 묶음을 위로 올린다 (FullscreenButton) */
+html:fullscreen .hide-in-fullscreen,
+html:-webkit-full-screen .hide-in-fullscreen {
+  display: none;
+}
+html:fullscreen .rise-in-fullscreen,
+html:-webkit-full-screen .rise-in-fullscreen {
+  top: calc(env(safe-area-inset-top) + 0.75rem);
+}
+
 /* 버튼 연타 시 더블탭 확대 방지 */
 button {
   touch-action: manipulation;

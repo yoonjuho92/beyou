@@ -1,15 +1,45 @@
 import { BASE } from './base';
 import { compose, type Patch } from './compose';
-import { CARROT, CRUMBS, EATING, FACES, TEARS_FALLEN, THINKING_DOTS } from './faces';
+import { EATING, FACES, TEARS_FALLEN, THINKING_DOTS, TREAT_PIECES } from './faces';
 
-export type LlamaState = 'idle' | 'thinking' | 'talking' | 'happy' | 'sad' | 'surprised' | 'eating';
+export type LlamaState = 'idle' | 'thinking' | 'talking' | 'happy' | 'sad' | 'surprised' | 'eating_carrot' | 'eating_dandelion';
 
-export const LLAMA_STATES: readonly LlamaState[] = ['idle', 'thinking', 'talking', 'happy', 'sad', 'surprised', 'eating'];
+export const LLAMA_STATES: readonly LlamaState[] = [
+  'idle',
+  'thinking',
+  'talking',
+  'happy',
+  'sad',
+  'surprised',
+  'eating_carrot',
+  'eating_dandelion',
+];
 
 /** 한 프레임의 지속 시간 단위 */
 export const TICK_MS = 120;
 
 type FrameSpec = { patches: readonly Patch[]; ticks: number };
+
+/** 간식을 세 입에 나눠 먹고 오물오물 씹은 뒤 행복해한다 (약 4초, 반복). 간식 답변을 기다리는 동안 쓴다. */
+function eating({ full, bitten, last, crumbs }: (typeof TREAT_PIECES)[keyof typeof TREAT_PIECES]): FrameSpec[] {
+  return [
+    { patches: EATING.bite(full), ticks: 3 },
+    { patches: EATING.chomp(bitten), ticks: 2 },
+    { patches: EATING.chew(bitten), ticks: 2 },
+    { patches: EATING.chomp(bitten), ticks: 2 },
+    { patches: EATING.bite(bitten), ticks: 2 },
+    { patches: [...EATING.chomp(last), crumbs[0]], ticks: 2 },
+    { patches: [...EATING.chew(last), crumbs[1]], ticks: 2 },
+    { patches: EATING.chomp(last), ticks: 2 },
+    { patches: EATING.bite(last), ticks: 2 },
+    { patches: [...EATING.chomp(null), ...crumbs], ticks: 2 },
+    { patches: EATING.chew(null), ticks: 2 },
+    { patches: EATING.chomp(null), ticks: 2 },
+    { patches: EATING.chew(null), ticks: 2 },
+    { patches: EATING.chomp(null), ticks: 2 },
+    { patches: FACES.happy, ticks: 6 },
+  ];
+}
 
 const SEQUENCES: Record<LlamaState, readonly FrameSpec[]> = {
   idle: [
@@ -35,24 +65,8 @@ const SEQUENCES: Record<LlamaState, readonly FrameSpec[]> = {
     { patches: [...FACES.sad, ...TEARS_FALLEN], ticks: 6 },
   ],
   surprised: [{ patches: FACES.surprised, ticks: 1 }],
-  // 당근을 세 입에 나눠 먹고 오물오물 씹은 뒤 행복해한다 (약 4초, 반복). 간식 답변을 기다리는 동안 쓴다.
-  eating: [
-    { patches: EATING.bite(CARROT.full), ticks: 3 },
-    { patches: EATING.chomp(CARROT.bitten), ticks: 2 },
-    { patches: EATING.chew(CARROT.bitten), ticks: 2 },
-    { patches: EATING.chomp(CARROT.bitten), ticks: 2 },
-    { patches: EATING.bite(CARROT.bitten), ticks: 2 },
-    { patches: [...EATING.chomp(CARROT.last), CRUMBS[0]], ticks: 2 },
-    { patches: [...EATING.chew(CARROT.last), CRUMBS[1]], ticks: 2 },
-    { patches: EATING.chomp(CARROT.last), ticks: 2 },
-    { patches: EATING.bite(CARROT.last), ticks: 2 },
-    { patches: [...EATING.chomp(null), ...CRUMBS], ticks: 2 },
-    { patches: EATING.chew(null), ticks: 2 },
-    { patches: EATING.chomp(null), ticks: 2 },
-    { patches: EATING.chew(null), ticks: 2 },
-    { patches: EATING.chomp(null), ticks: 2 },
-    { patches: FACES.happy, ticks: 6 },
-  ],
+  eating_carrot: eating(TREAT_PIECES.carrot),
+  eating_dandelion: eating(TREAT_PIECES.dandelion),
 };
 
 /** 상태별로 합성이 끝난 24×24 프레임 목록. 틱 단위로 펼쳐 두어 인덱스로 바로 조회한다. */

@@ -2,7 +2,7 @@ import type { Patch } from './compose';
 
 /**
  * 표정 오버레이. 좌표는 base.ts 기준 (x=열, y=행), '_'은 베이스 유지.
- * 범례: K 눈동자  H 하이라이트  B 입/눈썹  M 입 안쪽  P 볼/코  D 눈물  G 생각 점  O 당근  L 당근 잎  W 털(지우개)
+ * 범례: K 눈동자  H 하이라이트  B 입/눈썹  M 입 안쪽  P 볼/코  D 눈물  G 생각 점  O 당근  L 잎  V 잎맥  W 털(지우개)
  */
 
 const eyes = (rows: readonly string[], lx = 4, rx = 11, y = 6): Patch[] => [
@@ -65,25 +65,41 @@ export const THINKING_DOTS: readonly Patch[] = [
   { x: 22, y: 0, rows: ['GG', 'GG'] },
 ];
 
-/** 먹기(eating)용 얼굴 조각. 당근은 입(7~9열) 오른쪽에 물려 있다. */
+/** 먹기(eating_*)용 얼굴 조각. 간식은 입(7~9열) 오른쪽에 물려 있다. */
 const happyEyes = eyes(['_K_', 'K_K'], 3, 11);
 const openEyes = eyes(['HK', 'KK']);
 const mouthOpen: Patch = { x: 7, y: 9, rows: ['BBB', 'BMB', '_B_'] };
 const chewFlat: Patch = { x: 7, y: 9, rows: ['BBB'] };
 const chewRound: Patch = { x: 7, y: 9, rows: ['B_B', '_B_'] };
 
-/** 한 입씩 줄어드는 당근. 남은 조각은 늘 입에 붙어 있다. */
-export const CARROT = {
-  full: { x: 10, y: 9, rows: ['_OOOLL', 'OOOO_L'] },
-  bitten: { x: 10, y: 9, rows: ['OOLL', 'OO_L'] },
-  last: { x: 10, y: 9, rows: ['OLL', 'O_L'] },
-} as const satisfies Record<string, Patch>;
+type TreatPieces = { full: Patch; bitten: Patch; last: Patch; crumbs: readonly Patch[] };
 
-/** 입가에 떨어지는 당근 부스러기 */
-export const CRUMBS: readonly Patch[] = [
-  { x: 9, y: 11, rows: ['O'] },
-  { x: 10, y: 13, rows: ['O'] },
-];
+/**
+ * 간식별로 한 입씩 줄어드는 조각과 부스러기. 남은 조각은 늘 입에 붙어 있다.
+ * 키는 lib/chat/treat.ts의 TreatId와 같다.
+ */
+export const TREAT_PIECES = {
+  // 주황 몸통 + 초록 잎
+  carrot: {
+    full: { x: 10, y: 9, rows: ['_OOOLL', 'OOOO_L'] },
+    bitten: { x: 10, y: 9, rows: ['OOLL', 'OO_L'] },
+    last: { x: 10, y: 9, rows: ['OLL', 'O_L'] },
+    crumbs: [
+      { x: 9, y: 11, rows: ['O'] },
+      { x: 10, y: 13, rows: ['O'] },
+    ],
+  },
+  // 위쪽이 톱니처럼 들쭉날쭉한 잎 + 진한 잎맥
+  dandelion: {
+    full: { x: 10, y: 9, rows: ['L_L_LL', 'VVVVVL'] },
+    bitten: { x: 10, y: 9, rows: ['L_LL', 'VVVL'] },
+    last: { x: 10, y: 9, rows: ['LL', 'VL'] },
+    crumbs: [
+      { x: 9, y: 11, rows: ['L'] },
+      { x: 10, y: 13, rows: ['L'] },
+    ],
+  },
+} as const satisfies Record<string, TreatPieces>;
 
 export const EATING = {
   bite: (carrot: Patch | null) => [...openEyes, nose, ...cheeks, mouthOpen, ...(carrot ? [carrot] : [])],

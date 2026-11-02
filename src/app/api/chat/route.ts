@@ -2,7 +2,7 @@ import { createUIMessageStream, createUIMessageStreamResponse, streamText, type 
 import { after } from 'next/server';
 import { z } from 'zod';
 import { saveTurnMemory } from '@/lib/chat/memory';
-import { TREAT, treatInstruction, treatMessage } from '@/lib/chat/treat';
+import { TREAT_IDS, treatInstruction, treatMessage } from '@/lib/chat/treat';
 import { loadUserKnowledge, updateUserKnowledge } from '@/lib/chat/userKnowledge';
 import { embedText, toPgVector } from '@/lib/embeddings';
 import { parseEmotion } from '@/lib/emotion';
@@ -20,8 +20,10 @@ export const maxDuration = 60;
 const bodySchema = z.object({
   conversationId: z.uuid().optional(),
   characterSlug: z.string().min(1).max(64),
-  /** treat: 간식(당근) 주기. 클라이언트가 보낸 텍스트 대신 서버가 간식 턴을 만든다. */
+  /** treat: 간식 주기. 클라이언트가 보낸 텍스트 대신 서버가 간식 턴을 만든다. */
   action: z.enum(['treat']).optional(),
+  /** 어떤 간식인지 (action이 treat일 때). 생략하면 당근 */
+  treat: z.enum(TREAT_IDS).optional(),
   messages: z
     .array(
       z.object({
@@ -66,7 +68,7 @@ export async function POST(req: Request) {
     return jsonError(400, '요청 형식이 올바르지 않아요.');
   }
   const last = body.messages.at(-1)!;
-  const treat = body.action === 'treat' ? TREAT : null;
+  const treat = body.action === 'treat' ? (body.treat ?? 'carrot') : null;
   const userText = treat ? treatMessage(treat) : last.role === 'user' ? textOf(last) : '';
   if (!userText) return jsonError(400, '메시지를 입력해 주세요.');
   if (userText.length > env.CHAT_MAX_INPUT_CHARS) {

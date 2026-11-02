@@ -9,9 +9,11 @@ import { Sky } from '@/components/character/Sky';
 import { SpeechBubble } from '@/components/character/SpeechBubble';
 import { parseEmotion, stripEmotionTag } from '@/lib/emotion';
 import { cleanHint } from '@/lib/hintText';
+import { TREAT_IDS, type TreatId } from '@/lib/chat/treat';
 import { useCharacterStore } from '@/stores/characterStore';
 import type { ChatUIMessage } from '@/types';
 import { ChatInput } from './ChatInput';
+import { FullscreenButton } from './FullscreenButton';
 import { TreatButton } from './TreatButton';
 import { useVisualViewport } from './useVisualViewport';
 
@@ -80,8 +82,8 @@ export function ChatContainer({
   const nudgesRef = useRef(0);
   const lastActivityRef = useRef(Date.now());
   const draftRef = useRef('');
-  /** 간식 답변을 기다리는 중. 로딩(생각 중 점) 대신 먹는 모션을 보여 준다. */
-  const [treating, setTreating] = useState(false);
+  /** 답변을 기다리는 중인 간식. 로딩(생각 중 점) 대신 그 간식을 먹는 모션을 보여 준다. */
+  const [treating, setTreating] = useState<TreatId | null>(null);
 
   // 입력창 대화 유도 문구. 스트림으로 받아 오는 대로 채운다. 실패하면 기존 문구를 그대로 둔다.
   const refreshHint = useCallback(async () => {
@@ -131,12 +133,12 @@ export function ChatContainer({
     onFinish: ({ message }) => {
       if (message.metadata?.conversationId) conversationIdRef.current = message.metadata.conversationId;
       const raw = rawText(message);
-      setTreating(false);
+      setTreating(null);
       showEmotion(message.metadata?.emotion ?? parseEmotion(raw).emotion, holdFor(stripEmotionTag(raw)));
       void refreshHint();
     },
     onError: (err) => {
-      setTreating(false);
+      setTreating(null);
       console.error('[chat]', err);
       showEmotion('sad', 5_000);
     },
@@ -231,9 +233,9 @@ export function ChatContainer({
     clearError();
   }, [clearError]);
 
-  // 전송 → thinking(간식이면 eating), 첫 토큰 → talking. 완료 후 감정 표정은 onFinish에서.
+  // 전송 → thinking(간식이면 eating_*), 첫 토큰 → talking. 완료 후 감정 표정은 onFinish에서.
   useEffect(() => {
-    const waiting = treating ? 'eating' : 'thinking';
+    const waiting = treating ? (`eating_${treating}` as const) : 'thinking';
     if (status === 'submitted') setCharacterState(waiting);
     else if (status === 'streaming') setCharacterState(hasStreamedText ? 'talking' : waiting);
   }, [status, hasStreamedText, treating, setCharacterState]);
@@ -273,18 +275,27 @@ export function ChatContainer({
         />
       </div>
 
-      {/* 간식 주기: 로그아웃 버튼(page.tsx, 위에서 0.75rem) 바로 아래 */}
-      <div className="absolute top-[calc(env(safe-area-inset-top)+3rem)] right-[calc(env(safe-area-inset-right)+0.75rem)] z-30">
-        <TreatButton
-          disabled={busy}
-          onClick={() => {
-            onUserAction();
-            setTreating(true);
-            setCharacterState('eating');
-            // 실제 간식과 기록될 문장은 서버가 정한다. 이 텍스트는 화면용 자리표시.
-            void sendMessage({ text: '(간식을 건넸다)' }, { body: { action: 'treat' } });
-          }}
-        />
+      {/* 전체화면 토글: 왼쪽 위 */}
+      <div className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-[calc(env(safe-area-inset-left)+0.75rem)] z-30">
+        <FullscreenButton />
+      </div>
+
+      {/* 간식 주기: 로그아웃 버튼(page.tsx, 위에서 0.75rem) 바로 아래에 세로로. 전체화면이면 로그아웃이 숨으니 그 자리로 올라간다 */}
+      <div className="rise-in-fullscreen absolute top-[calc(env(safe-area-inset-top)+3rem)] right-[calc(env(safe-area-inset-right)+0.75rem)] z-30 flex flex-col gap-2">
+        {TREAT_IDS.map((treat) => (
+          <TreatButton
+            key={treat}
+            treat={treat}
+            disabled={busy}
+            onClick={() => {
+              onUserAction();
+              setTreating(treat);
+              setCharacterState(`eating_${treat}`);
+              // 기록될 문장과 상황 설명은 서버가 간식 id로 만든다. 이 텍스트는 화면용 자리표시.
+              void sendMessage({ text: '(간식을 건넸다)' }, { body: { action: 'treat', treat } });
+            }}
+          />
+        ))}
       </div>
 
       {/* 구름 입력창: 모바일 키보드가 올라오면 키보드 높이(--kb)만큼만 위로 올라간다 */}

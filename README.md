@@ -7,7 +7,7 @@ Supabase(Auth · Postgres · RLS · pgvector) + OpenAI + Vercel AI SDK를 사용
 
 ## 셋업 순서
 
-> 패키지 매니저는 pnpm입니다. 설치되어 있지 않다면 `npm i -g pnpm` 또는 `npx pnpm@10 <명령>`을 쓰세요.
+> 패키지 매니저는 pnpm 10입니다(`package.json`의 `packageManager`). 전역 pnpm이 다른 버전이어도 자동으로 10으로 전환됩니다. 설치되어 있지 않다면 `npm i -g pnpm` 또는 `npx pnpm@10 <명령>`을 쓰세요.
 
 1. **Supabase 프로젝트 생성** — https://supabase.com/dashboard 에서 새 프로젝트를 만듭니다.
 2. **마이그레이션 적용** — 아래 중 하나
@@ -72,8 +72,17 @@ characters/beyou/
 
 ## 간식 주기
 
-오른쪽 위 로그아웃 버튼 아래의 픽셀 당근 버튼을 누르면 `/api/chat`에 `action: 'treat'`로 요청합니다. 서버가 `(간식으로 당근을 건넸다)` 유저 턴을(`src/lib/chat/treat.ts`) 저장한 뒤, 기뻐하며 맛을 표현하라는 상황 설명을 시스템 프롬프트에 붙여 답을 스트리밍합니다.
+오른쪽 위 로그아웃 버튼 아래의 픽셀 간식 버튼(당근, 민들레 잎)을 누르면 `/api/chat`에 `action: 'treat'`, `treat: 'carrot' | 'dandelion'`으로 요청합니다.
+서버가 `(간식으로 민들레 잎을 건넸다)` 같은 유저 턴을 저장한 뒤, 간식별 맛 힌트와 함께 기뻐하라는 상황 설명을
+시스템 프롬프트에 붙여 답을 스트리밍합니다(`src/lib/chat/treat.ts`). 답을 기다리는 동안은 로딩 대신 그 간식을 먹는
+픽셀 모션(`eating_carrot` / `eating_dandelion`)이 나옵니다. 간식 추가는 `TREATS`(이름·맛) + `llama/faces.ts`의 `TREAT_PIECES`(먹는 조각)
++ `llama/treatIcons.ts`(버튼 아이콘)에 같은 id로 넣으면 됩니다.
 일반 채팅과 같은 레이트리밋·대화 저장·기억 저장을 거치며, 간식 턴은 기억 검색과 유저 지식 요약을 건너뜁니다.
+
+## 전체화면
+
+왼쪽 위 버튼으로 전체화면을 켜고 끕니다(`FullscreenButton.tsx`). 전체화면 중에는 로그아웃 버튼이 숨고 간식 버튼이 그 자리로 올라갑니다.
+전체화면 API가 없는 브라우저(iPhone Safari 등)에서는 버튼이 나오지 않습니다 — iPhone은 홈 화면에 추가하면 주소창 없이 열 수 있습니다.
 
 ## 대화 유도 문구
 
