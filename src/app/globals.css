@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-cream: #fff8ec;
+  --color-bark: #5b3a29;
+  --color-blush: #f6a6b2;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: linear-gradient(180deg, #e8f4ff 0%, #fdf2f8 100%);
+  color: var(--color-bark);
+  min-height: 100dvh;
+  /* 모바일: 당겨서 새로고침·바운스 스크롤 방지, 탭 하이라이트 제거 */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 버튼 연타 시 더블탭 확대 방지 */
+button {
+  touch-action: manipulation;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* 하늘 구름: 화면 왼쪽 밖에서 오른쪽 밖으로 천천히 흘러간다 */
+@keyframes sky-drift {
+  from {
+    transform: translateX(-120px);
+  }
+  to {
+    transform: translateX(100vw);
+  }
+}
+
+.sky-drift {
+  animation-name: sky-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-drift {
+    animation-play-state: paused;
+  }
+}

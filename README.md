@@ -1,0 +1,113 @@
+# 비유와 대화하기 🦙
+
+화면에 둥둥 떠 있는 픽셀 라마 **비유(Beyou)** 와 대화하는 Next.js 15 앱입니다.
+Supabase(Auth · Postgres · RLS · pgvector) + OpenAI + Vercel AI SDK를 사용하고,
+캐릭터 설정은 시스템 프롬프트에 통째로 넣고, **유저별** 지식(이름 등)은 대화 중 자동 요약해 저장하며,
+과거 대화는 RAG로 검색해 답변에 반영합니다.
+
+## 셋업 순서
+
+> 패키지 매니저는 pnpm입니다. 설치되어 있지 않다면 `npm i -g pnpm` 또는 `npx pnpm@10 <명령>`을 쓰세요.
+
+1. **Supabase 프로젝트 생성** — https://supabase.com/dashboard 에서 새 프로젝트를 만듭니다.
+2. **마이그레이션 적용** — 아래 중 하나
+   - Supabase CLI: `supabase link --project-ref <ref>` → `supabase db push`
+   - 또는 Dashboard → SQL Editor에서 `supabase/migrations/`의 `0001` → `0004`를 순서대로 실행
+3. **환경 변수** — `cp .env.example .env.local` 후 값을 채웁니다.
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`(또는 기존 `NEXT_PUBLIC_SUPABASE_ANON_KEY`), `SUPABASE_SERVICE_ROLE_KEY`(secret key): Dashboard → Project Settings → API Keys
+   - `OPENAI_API_KEY`, `OPENAI_MODEL`(기본 `gpt-6-luna`)
+   - (선택) `OPENAI_UTILITY_MODEL`: 유저 지식 요약·대화 유도 문구용 모델 (비우면 `OPENAI_MODEL`)
+4. **유저 생성** — 앱에는 회원가입이 없습니다. **Dashboard → Authentication → Users → Add user** 에서
+   이메일/비밀번호로 유저를 직접 만들고 "Auto Confirm User"를 체크하세요.
+   Authentication → Sign In / Providers에서 **"Allow new users to sign up"을 꺼도** 앱은 정상 동작합니다.
+5. **캐릭터 인제스트** — `pnpm ingest` (아래 "캐릭터 md" 참고)
+6. **개발 서버** — `pnpm dev` → http://localhost:3000
+
+(선택) 타입 재생성: `npx supabase login` 후 `pnpm db:types`
+
+## 스크립트
+
+| 명령 | 설명 |
+|---|---|
+| `pnpm dev` / `pnpm build` / `pnpm start` | Next.js |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm test` | Vitest (픽셀 그리드 검증, 감정 파서, 토큰 예산) |
+| `pnpm ingest [slug ...]` | 캐릭터(system.md + fewshot.md) upsert |
+| `pnpm db:types` | `supabase gen types` → `src/types/database.ts` |
+
+## 캐릭터 md
+
+캐릭터마다 폴더 하나, `system.md`(필수)와 `fewshot.md`(선택)로 관리합니다. 수정한 뒤 `pnpm ingest`(또는 `pnpm ingest beyou`)를 다시 실행하면 반영됩니다.
+
+```
+characters/beyou/
+├── system.md      # 프런트매터(slug, name, description) + 본문(성격·말투 + [설정]) → characters.system_prompt
+└── fewshot.md     # 대화 예시 → characters.few_shot. 시스템 프롬프트의 [대화 예시]로 들어감
+```
+
+- `system.md` 본문 전체가 매 요청의 시스템 프롬프트 맨 앞에 들어갑니다 (공통 규칙·감정 태그·유저 지식·과거 기억은 `src/lib/prompts.ts`가 붙임).
+- 캐릭터 설정(lore)은 청킹·검색 없이 `# [설정]` 섹션에 통째로 둡니다.
+
+## 유저 지식
+
+`user_knowledge` 테이블에 (유저, 캐릭터)마다 요약 한 덩어리를 저장하고, 매 요청 `[유저 지식]`으로 통째로 넣습니다.
+
+- 응답이 끝난 뒤 `after()`에서 비동기로, 기존 유저 지식 + 이번 턴(직전 캐릭터 발화 · 유저 발화 · 응답)을 LLM에 주고
+  갱신된 전체 목록을 받습니다(`src/lib/chat/userKnowledge.ts`). 새로 알게 된 게 없으면 `NO_CHANGE`로 저장을 생략합니다.
+- `## 프로필`(이름·직업·취향 등 오래가는 사실)과 `## 최근 이야기`(날짜가 붙은 감정·고민·일정·관심 주제, 최대 10개) 두 묶음으로 쌓습니다.
+  "ㅎㅇ"처럼 정보가 없는 턴만 건너뛰며, 잊어 달라고 한 내용은 지웁니다. 서버 로그에 `[user-knowledge] updated / no change`가 찍힙니다.
+- 턴마다 요약용 LLM 호출이 한 번 추가됩니다. 비용이 걱정되면 `OPENAI_UTILITY_MODEL`에 작은 모델을 지정하세요.
+
+## 재방문 인사
+
+이전 대화나 유저 지식이 있는 유저가 접속하면, 고정 인사 대신 `GET /api/greeting?characterSlug=beyou`가 만든 인사를
+말풍선에 스트리밍합니다(`src/lib/chat/greeting.ts`). 채팅과 같은 시스템 프롬프트(캐릭터 정의·대화 예시·유저 지식)에
+최근 대화 몇 개를 덧붙여, 이름을 부르고 지난 이야기 하나를 이어서 묻게 합니다.
+완성된 인사는 최근 대화에 assistant 메시지로 저장해 유저의 다음 답장이 맥락을 잃지 않게 하며,
+유저가 인사 도중 먼저 말을 걸면 생성을 중단하고 저장하지 않습니다.
+
+## 간식 주기
+
+오른쪽 위 로그아웃 버튼 아래의 🥕 버튼을 누르면 `/api/chat`에 `action: 'treat'`로 요청합니다. 서버가 `(간식으로 당근을 건넸다)` 유저 턴을(`src/lib/chat/treat.ts`) 저장한 뒤, 기뻐하며 맛을 표현하라는 상황 설명을 시스템 프롬프트에 붙여 답을 스트리밍합니다.
+일반 채팅과 같은 레이트리밋·대화 저장·기억 저장을 거치며, 간식 턴은 기억 검색과 유저 지식 요약을 건너뜁니다.
+
+## 대화 유도 문구
+
+입력창 placeholder는 `GET /api/hint?characterSlug=beyou`가 text 스트림으로 보내는 문구입니다(`src/lib/chat/hint.ts`). 생성되는 대로 채워집니다.
+캐릭터 설정 + 유저 지식에, 절반 확률로 이 유저의 과거 대화(`memories`) 중 하나를 무작위로 골라 함께 LLM에 주고
+유저가 건넬 법한 한 문장을 받습니다. 접속할 때와 답변이 끝날 때마다 갱신되며, 실패하면 기본 문구를 씁니다.
+
+## ⚠️ 임베딩 차원
+
+벡터 차원은 env `EMBEDDING_DIMENSIONS` **하나로** 통제하며, 마이그레이션의 `vector(1536)`과 반드시 같아야 합니다.
+차원(또는 임베딩 모델)을 바꾸려면:
+
+1. `EMBEDDING_DIMENSIONS`와 `OPENAI_EMBEDDING_MODEL` 수정
+2. 새 마이그레이션에서 `memories.embedding` 컬럼과 `match_memories`의 `query_embedding` 인자를 `vector(N)`으로 변경 (HNSW 인덱스 재생성 포함)
+3. 기존 임베딩은 호환되지 않으므로 `memories`는 비우거나 재임베딩
+
+차원이 어긋나면 `embedBatch()`가 에러를 던집니다.
+
+## 사용자별 데이터 격리
+
+- `conversations.user_id = auth.users.id`, RLS `auth.uid() = user_id` — 대화 이력은 본인 것만 읽고 쓸 수 있습니다.
+- `messages`는 소유한 대화를 통해서만 접근됩니다(RLS).
+- `user_knowledge`(유저 지식)도 `user_id` + RLS로 격리되며, 유저 세션 클라이언트로만 읽고 씁니다.
+- `memories`(장기 기억)도 `user_id` + RLS로 격리되며, `match_memories`는 `security invoker` + `m.user_id = auth.uid()`로
+  **로그인한 유저의 기억만** 검색합니다. `/api/chat`은 이 함수를 유저 세션 클라이언트로 호출합니다.
+- 클라이언트가 보낸 `conversationId`는 서버에서 본인 소유인지 확인하고, 대화 히스토리는 클라이언트가 아닌 DB에서 읽습니다.
+- service role 키는 캐릭터 인제스트(`lib/characters.ts`)에서만 사용합니다.
+
+## API
+
+### `POST /api/chat`
+`useChat` 규격 `{ conversationId?, characterSlug, messages }`. 세션 필수(401), 분당 `CHAT_RATE_LIMIT_PER_MIN`회(429),
+`CHAT_MAX_INPUT_CHARS`자 제한(413). 새 대화면 메시지 메타데이터(`conversationId`)로 id를 돌려줍니다.
+감정(`happy|sad|surprised|neutral`)은 finish 메타데이터로 전달되고, `[emotion:*]` 태그는 화면과 DB에서 제거됩니다.
+
+레이트리밋은 기본적으로 프로세스 메모리(Map)를 쓰며, `UPSTASH_REDIS_REST_URL`/`TOKEN`이 있으면 Upstash를 사용합니다.
+
+## 픽셀 라마
+
+`src/components/character/llama/` — 외부 에셋 없이 24×24 문자 그리드(`base.ts`)에 표정 패치(`faces.ts`)를 합성(`compose.ts`)해
+SVG `<rect>`로 그립니다. 색은 `palette.ts`에만 있습니다. 상태별 프레임은 `frames.ts`(120ms 틱)에 정의되어 있습니다.
