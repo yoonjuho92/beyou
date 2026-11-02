@@ -35,6 +35,8 @@ button {
 }
 
 .pixelated {
+  /* 픽셀 아트를 키울 때 흐리게 보간하지 않는다 (crisp-edges는 pixelated를 모르는 브라우저용 대체) */
+  image-rendering: crisp-edges;
   image-rendering: pixelated;
 }
 

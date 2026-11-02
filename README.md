@@ -146,4 +146,4 @@ LLM을 부르지 않고 목록에서 고르며 직전 대사는 반복하지 않
 ## 픽셀 라마
 
 `src/components/character/llama/` — 외부 에셋 없이 24×24 문자 그리드(`base.ts`)에 표정 패치(`faces.ts`)를 합성(`compose.ts`)해
-SVG `<rect>`로 그립니다. 색은 `palette.ts`에만 있습니다. 상태별 프레임은 `frames.ts`(120ms 틱)에 정의되어 있습니다.
+24×24 캔버스 한 장에 그린 뒤 픽셀 그대로 확대합니다(픽셀마다 SVG rect를 쓰면 기울어질 때 격자 틈이 보여서). 색은 `palette.ts`에만 있습니다. 상태별 프레임은 `frames.ts`(120ms 틱)에 정의되어 있습니다.
