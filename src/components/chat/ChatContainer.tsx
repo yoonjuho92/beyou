@@ -47,8 +47,8 @@ function holdFor(text: string): number {
   return Math.min(15_000, Math.max(4_000, 2_500 + text.length * 80));
 }
 
-const firstGreeting = (name: string) => `…인간이네요. 저는 ${name}예요. 너무 빤히 보진 말고요.`;
-const fallbackGreeting = '또 왔네요. 뭐, 심심하던 참이었어요.';
+const firstGreeting = (name: string) => `…인간이네. 난 ${name}. 너무 빤히 보지는 마.`;
+const fallbackGreeting = '또 왔네. 뭐… 마침 심심하던 참이긴 했어.';
 
 /** 유저가 조용하면 말풍선이 사라진 뒤 20~30초(랜덤) 후에 비유가 먼저 말을 건다. */
 const NUDGE_MIN_MS = 20_000;
