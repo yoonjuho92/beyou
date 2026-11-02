@@ -8,7 +8,7 @@ import { embedText, toPgVector } from '@/lib/embeddings';
 import { parseEmotion } from '@/lib/emotion';
 import { serverEnv } from '@/lib/env.server';
 import { chatModel } from '@/lib/openai';
-import { buildSystemPrompt } from '@/lib/prompts';
+import { buildSystemPrompt, withTime } from '@/lib/prompts';
 import { searchMemories, selectMemories } from '@/lib/rag/retrieve';
 import { checkChatRateLimit } from '@/lib/rateLimit';
 import { createClient } from '@/lib/supabase/server';
@@ -157,9 +157,14 @@ export async function POST(req: Request) {
     const system = treat ? `${basePrompt}\n\n${treatInstruction(treat)}` : basePrompt;
     const lastPrevious = previous.at(-1);
     const previousReply = lastPrevious?.role === 'assistant' ? lastPrevious.content : null;
+    // 유저 메시지에만 보낸 시각을 붙인다 (비유의 답에 붙이면 모델이 시각 표기를 따라 한다).
     const history: ModelMessage[] = [
-      ...previous.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      { role: 'user', content: userText },
+      ...previous.map((m) =>
+        m.role === 'user'
+          ? { role: 'user' as const, content: withTime(m.content, m.created_at ?? new Date()) }
+          : { role: 'assistant' as const, content: m.content },
+      ),
+      { role: 'user', content: withTime(userText, new Date()) },
     ];
 
     // 8. 응답 완료 후 처리: assistant 메시지 저장 · updated_at 갱신 · 기억 저장 · 유저 지식 요약.

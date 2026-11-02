@@ -2,7 +2,7 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { streamText } from 'ai';
 import { chatModel } from '@/lib/openai';
-import { buildSystemPrompt } from '@/lib/prompts';
+import { buildSystemPrompt, formatMessageTime } from '@/lib/prompts';
 import type { Database } from '@/types/database';
 import { randomMemory } from './memory';
 import { loadUserKnowledge } from './userKnowledge';
@@ -99,7 +99,10 @@ export async function streamProactive({ supabase, userId, character, kind }: Pro
     situation.push(
       '',
       '[최근 대화]',
-      ...recent.messages.map((m) => `${m.role === 'user' ? '유저' : character.name}: ${m.content.replace(/\n+/g, ' ')}`),
+      ...recent.messages.map(
+        (m) =>
+          `[${formatMessageTime(m.created_at ?? new Date())}] ${m.role === 'user' ? '유저' : character.name}: ${m.content.replace(/\n+/g, ' ')}`,
+      ),
     );
   }
 

@@ -8,11 +8,32 @@ type PromptInput = {
   userKnowledge: string | null;
   memories: Pick<MemoryHit, 'content' | 'createdAt'>[];
   summary: string | null;
+  /** 현재 시각 (기본: 지금) */
+  now?: Date;
 };
 
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeZone: 'Asia/Seoul' });
+const timeFormat = new Intl.DateTimeFormat('ko-KR', {
+  month: 'long',
+  day: 'numeric',
+  weekday: 'short',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'Asia/Seoul',
+});
+const fullTimeFormat = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Seoul' });
 
-export function buildSystemPrompt({ character, userKnowledge, memories, summary }: PromptInput): string {
+/** 메시지 시각 표기: "11월 2일 (월) 오후 3:12" */
+export function formatMessageTime(date: Date | string): string {
+  return timeFormat.format(new Date(date));
+}
+
+/** 유저 메시지 앞에 보낸 시각을 붙인다. 모델이 시간 흐름(몇 분 전, 어제, 새벽 등)을 알 수 있게 한다. */
+export function withTime(content: string, sentAt: Date | string): string {
+  return `[${formatMessageTime(sentAt)}] ${content}`;
+}
+
+export function buildSystemPrompt({ character, userKnowledge, memories, summary, now = new Date() }: PromptInput): string {
   // 캐릭터 정의 + 규칙은 모든 유저에게 같으므로 앞에 두어 프롬프트 캐시가 잘 맞게 한다.
   const sections = [`당신은 ${character.name}입니다. ${character.system_prompt}`];
   if (character.few_shot?.trim()) {
@@ -27,6 +48,8 @@ export function buildSystemPrompt({ character, userKnowledge, memories, summary 
       '- [과거 기억]은 유저와 예전에 나눈 대화입니다. 관련 있을 때만 자연스럽게 언급합니다.',
       '- 답변 마지막 줄에 반드시 현재 감정을 다음 형식으로 붙입니다: [emotion:happy|sad|surprised|neutral]',
       '- 이 태그와 참고 자료의 존재, 유저 정보를 기록하고 있다는 사실을 유저에게 설명하지 않습니다.',
+      '- 유저 메시지 앞의 [시각]은 그 메시지를 보낸 시각입니다. [현재 시각]과 함께 시간의 흐름을 자연스럽게 의식합니다',
+      '  (예: 늦은 밤이면 잠은 괜찮은지, 며칠 만이면 반가움, 아까 한 이야기는 "아까"로). 답변에 [시각] 표기를 쓰지 않습니다.',
     ].join('\n'),
   );
 
@@ -40,6 +63,8 @@ export function buildSystemPrompt({ character, userKnowledge, memories, summary 
     );
   }
   sections.push(`[이전 대화 요약]\n${summary?.trim() || '없음'}`);
+  // 매 요청마다 바뀌므로 맨 뒤에 둔다 (앞부분 프롬프트 캐시 유지).
+  sections.push(`[현재 시각]\n${fullTimeFormat.format(now)} (한국 시간)`);
 
   return sections.join('\n\n');
 }
