@@ -8,7 +8,7 @@ import { Meadow } from '@/components/character/Meadow';
 import { Sky } from '@/components/character/Sky';
 import { SpeechBubble } from '@/components/character/SpeechBubble';
 import { parseEmotion, stripEmotionTag } from '@/lib/emotion';
-import { cleanHint } from '@/lib/hintText';
+import { cleanHint, looksLikeCharacterLine } from '@/lib/hintText';
 import { TREAT_IDS, type TreatId } from '@/lib/chat/treat';
 import { useCharacterStore } from '@/stores/characterStore';
 import type { ChatUIMessage } from '@/types';
@@ -86,7 +86,8 @@ export function ChatContainer({
   const [treating, setTreating] = useState<TreatId | null>(null);
 
   // 입력창 대화 유도 문구. 스트림으로 받아 오는 대로 채운다. 실패하면 기존 문구를 그대로 둔다.
-  const refreshHint = useCallback(async () => {
+  // 다 만들어진 문구가 비유 쪽 말투면 버리고 한 번 다시 받는다. 그래도 그러면 기본 문구로 둔다.
+  const refreshHint = useCallback(async (attempt = 0): Promise<void> => {
     setHintReady(false);
     try {
       const res = await fetch(`/api/hint?characterSlug=${encodeURIComponent(characterSlug)}`);
@@ -100,7 +101,14 @@ export function ChatContainer({
         const text = cleanHint(raw);
         if (text) setHint(text);
       }
-      if (cleanHint(raw)) setHintReady(true);
+      const final = cleanHint(raw);
+      if (final && looksLikeCharacterLine(final)) {
+        console.warn('[hint] character-voiced suggestion dropped:', final);
+        setHint(null);
+        if (attempt === 0) return refreshHint(1);
+        return;
+      }
+      if (final) setHintReady(true);
     } catch (err) {
       console.warn('[hint]', err);
     }
