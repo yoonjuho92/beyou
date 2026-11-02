@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 
 /**
- * 모바일 키보드에 맞춰 화면 높이를 줄인다.
- * iOS Safari는 키보드가 올라와도 100dvh가 그대로라 입력창이 키보드에 가리거나 화면 전체가 밀려 올라간다.
- * visualViewport(실제로 보이는 영역)의 높이·위치를 CSS 변수로 내려 주고, 앱 컨테이너가 이를 따른다.
- *   --vvh   보이는 영역 높이 (기본 100dvh)
- *   --vvtop 보이는 영역의 위쪽 오프셋 (iOS가 페이지를 스크롤했을 때 그만큼 따라 내려간다)
+ * 모바일 키보드가 올라와도 배경 장면(하늘·풀밭·비유)은 그대로 두고 입력창만 키보드 위로 올린다.
+ * visualViewport(실제로 보이는 영역)를 읽어 CSS 변수로 내려 준다.
+ *   --app-h  앱 높이 = 레이아웃 뷰포트 높이 (키보드와 무관하게 고정)
+ *   --vvtop  iOS가 포커스된 입력창을 보이려고 화면을 민 만큼. 앱을 그만큼 내려 장면이 제자리에 보이게 한다.
+ *   --kb     키보드 높이. 입력창을 이만큼 위로 올린다.
  */
 export function useVisualViewport() {
   useEffect(() => {
@@ -19,20 +19,23 @@ export function useVisualViewport() {
     const sync = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        root.style.setProperty('--vvh', `${vv.height}px`);
+        const keyboard = Math.max(0, window.innerHeight - vv.height);
+        root.style.setProperty('--app-h', `${window.innerHeight}px`);
         root.style.setProperty('--vvtop', `${vv.offsetTop}px`);
+        root.style.setProperty('--kb', `${keyboard}px`);
       });
     };
 
     sync();
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    window.addEventListener('resize', sync);
     return () => {
       cancelAnimationFrame(frame);
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
-      root.style.removeProperty('--vvh');
-      root.style.removeProperty('--vvtop');
+      window.removeEventListener('resize', sync);
+      for (const name of ['--app-h', '--vvtop', '--kb']) root.style.removeProperty(name);
     };
   }, []);
 }

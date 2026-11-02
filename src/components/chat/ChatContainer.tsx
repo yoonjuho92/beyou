@@ -44,18 +44,6 @@ function holdFor(text: string): number {
   return Math.min(15_000, Math.max(4_000, 2_500 + text.length * 80));
 }
 
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia(query);
-    const update = () => setMatches(mql.matches);
-    update();
-    mql.addEventListener('change', update);
-    return () => mql.removeEventListener('change', update);
-  }, [query]);
-  return matches;
-}
-
 const firstGreeting = (name: string) => `앗, 인간이다…! (귀 쫑긋) 안녕하세요, 저는 ${name}예요. 뿌우.`;
 const fallbackGreeting = '또 만났네요! (꼬리 살랑) 반가워요, 뿌우.';
 
@@ -68,8 +56,6 @@ export function ChatContainer({
   returning,
 }: Props) {
   useVisualViewport();
-  // 키보드가 올라와 화면이 낮아지면 비유를 조금 작게 그린다.
-  const compact = useMediaQuery('(max-height: 560px)');
   const conversationIdRef = useRef<string | null>(initialConversationId);
   const [hint, setHint] = useState<string | null>(null);
   const [greeting, setGreeting] = useState(returning ? '' : firstGreeting(characterName));
@@ -212,7 +198,7 @@ export function ChatContainer({
       {/* 비유가 날아다니는 영역: 지평선 위 하늘 ~ 구름 입력창 위 */}
       <div className="absolute inset-x-3 top-[22%] bottom-[calc(env(safe-area-inset-bottom)+150px)]">
         <Character
-          scale={compact ? 4 : 5}
+          scale={5}
           bubble={
             showBubble ? (
               <SpeechBubble
@@ -240,8 +226,8 @@ export function ChatContainer({
         />
       </div>
 
-      {/* 구름 입력창 */}
-      <div className="absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
+      {/* 구름 입력창: 모바일 키보드가 올라오면 키보드 높이(--kb)만큼만 위로 올라간다 */}
+      <div className="absolute inset-x-0 bottom-0 z-20 translate-y-[calc(-1*var(--kb,0px))] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
         <div className="mx-auto max-w-xl">
           <ChatInput
             disabled={busy}

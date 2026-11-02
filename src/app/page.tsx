@@ -81,8 +81,8 @@ export default async function HomePage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    // 모바일 키보드가 올라오면 보이는 영역(--vvh, useVisualViewport)에 맞춰 줄어든다.
-    <main className="fixed inset-x-0 top-[var(--vvtop,0px)] h-[var(--vvh,100dvh)] w-full overflow-hidden">
+    // 키보드가 올라와도 크기는 그대로. iOS가 화면을 민 만큼(--vvtop)만 따라 내려가 장면이 제자리에 보인다 (useVisualViewport).
+    <main className="fixed inset-x-0 top-[var(--vvtop,0px)] h-[var(--app-h,100dvh)] w-full overflow-hidden">
       <div className="absolute top-[calc(env(safe-area-inset-top)+0.75rem)] right-[calc(env(safe-area-inset-right)+0.75rem)] z-30">
         <LogoutButton />
       </div>

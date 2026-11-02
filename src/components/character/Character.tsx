@@ -29,7 +29,12 @@ export function Character({ scale = 5, bubble }: { scale?: number; bubble?: Reac
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const tilt = useMotionValue(0);
-  const depth = useTransform(y, (v) => 0.85 + (0.3 * v) / Math.max(1, areaHeight - size));
+  // 영역이 비유보다 낮아지거나(화면 회전 등) y가 아직 영역 밖이어도 배율이 튀지 않도록 0~1로 묶는다.
+  const depth = useTransform(y, (v) => {
+    const range = areaHeight - size;
+    const t = range > 0 ? Math.min(1, Math.max(0, v / range)) : 0.5;
+    return 0.85 + 0.3 * t;
+  });
   // 아래 기준으로 축소된 만큼 말풍선도 내려서 머리 바로 위에 붙인다.
   const bubbleDrop = useTransform(depth, (d) => size * (1 - d));
 
