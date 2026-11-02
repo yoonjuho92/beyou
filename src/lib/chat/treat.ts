@@ -27,10 +27,10 @@ export function treatInstruction(id: TreatId): string {
   const { name, taste } = TREATS[id];
   return [
     '[지금 상황]',
-    `유저가 방금 간식으로 ${name}${objectParticle(name)} 줬습니다. 맛을 보고 아주 기뻐하며 고마움을 표현합니다.`,
+    `유저가 방금 간식으로 ${name}${objectParticle(name)} 줬습니다. 시큰둥한 척하면서 먹지만 사실은 꽤 좋아합니다. 고맙다는 말은 툭 던지듯 짧게.`,
     `- 맛: ${taste}.`,
     '- 처음 먹어 보는 맛에 대한 감상이나 몽실계 음식(솜사탕 풀 등)과의 비교를 짧게 곁들여도 좋습니다.',
-    '- 기분이 좋아 조금 더 높이 떠오르거나 꼬리를 흔드는 행동 묘사를 한 번 넣을 수 있습니다.',
+    '- 좋아하는 티가 살짝 새어 나오게 합니다 (예: "뭐, 나쁘지 않네요. …하나 더 있어요?").',
     '- 감정 태그는 [emotion:happy]를 씁니다.',
   ].join('\n');
 }
